@@ -1,4 +1,9 @@
 /* 
+przyciski na płytce
++   - buttonSelect
+++  - buttonNext, buttonMenu
+
+
 case0 : ustaw czas(godzine/minute)
 case1 : budzik wył./wł.
 case2 : ustaw godzine lub minute alarmu
@@ -114,6 +119,13 @@ void handleMenu() {
 }
 
 void checkAlarm() {
+  // zielona dioda dla włączonego alarmu
+  if(alarmEnabled) {
+    digitalWrite(ledGreen, HIGH);        
+  } else {
+    digitalWrite(ledGreen, LOW);
+  }
+  // czerwona dioda świeci gdy jest czas alarmu
   if ((alarmEnabled && hour == alarmHour && minute == alarmMinute) || (dawnAlarmEnabled && analogRead(photoresistor) > 512)) {
     alarmSounding = true;
     while (alarmSounding) {

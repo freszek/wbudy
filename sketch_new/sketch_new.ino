@@ -1,3 +1,10 @@
+/* 
+case0 : ustaw czas(godzine/minute)
+case1 : budzik wył./wł.
+case2 : ustaw godzine lub minute alarmu
+case3 : fotorezystor
+*/
+
 #include <LiquidCrystal.h>
 
 // Inicjalizacja wyświetlacza LCD
@@ -24,7 +31,7 @@ int alarmHour = 0;
 int alarmMinute = 0;
 bool alarmEnabled = false;
 bool alarmSounding = false;
-bool dawnAlarmEnabled = false;
+bool dawnAlarmEnabled = false; // na światło
 
 int menuState = 0;
 
@@ -53,7 +60,7 @@ void updateClock() {
 void handleMenu() {
   if (digitalRead(buttonMenu) == LOW) {
     menuState++;
-    if (menuState > 4) {
+    if (menuState > 3) {
       menuState = 0;
     }
     delay(200);
@@ -61,41 +68,45 @@ void handleMenu() {
 
   if (digitalRead(buttonNext) == LOW) {
     switch (menuState) {
-            case 1: // Ustaw godzinę
+        case 0: // Ustaw godzinę
         hour++;
+        Serial.println("Zmieniam godzine.");
         if (hour > 23) {
           hour = 0;
         }
         break;
-      case 2: // Ustaw minutę
-        minute++;
-        if (minute > 59) {
-          minute = 0;
-        }
+      case 1: // włącz/wyłącz budzik
+        alarmEnabled = !alarmEnabled;  
+        // reset godziny i minuty alarmu
+        alarmHour = 0;
+        alarmMinute = 0;
         break;
-      case 3: // Ustaw budzik
+      case 2: // Ustaw godzinę alarmu
         alarmHour++;
         if (alarmHour > 23) {
           alarmHour = 0;
         }
         break;
-      case 4: // Włącz budzik "skoro świt"
-        dawnAlarmEnabled = !dawnAlarmEnabled;
-        break;
+      case 3: // włącz/wyłącz "skoro świt"
+        dawnAlarmEnabled = !dawnAlarmEnabled;   
+        break;          
     }
     delay(200);
   }
 
   if (digitalRead(buttonSelect) == LOW) {
     switch (menuState) {
-      case 3: // Ustaw budzik
+      case 0: // Ustaw minutę
+        minute++;
+        if (minute > 59) {
+          minute = 0;
+        }
+        break;
+      case 2: // Ustaw minutę alarmu
         alarmMinute++;
         if (alarmMinute > 59) {
           alarmMinute = 0;
         }
-        break;
-      case 4: // Włącz/wyłącz budzik
-        alarmEnabled = !alarmEnabled;
         break;
     }
     delay(200);
@@ -143,30 +154,14 @@ void displayTime() {
   switch (menuState) {
     case 0:
       lcd.setCursor(0, 1);
-      if (alarmEnabled) {
-        lcd.print("Budzik: ");
-        if (alarmHour < 10) {
-          lcd.print("0");
-        }
-        lcd.print(alarmHour);
-        lcd.print(":");
-        if (alarmMinute < 10) {
-          lcd.print("0");
-        }
-        lcd.print(alarmMinute);
-      } else {
-        lcd.print("Budzik: wyl.");
-      }
+      lcd.print("Ustaw czas");
       break;
     case 1:
       lcd.setCursor(0, 1);
-      lcd.print("Ustaw godzine");
+      lcd.print("Budzik ");
+      lcd.print(alarmEnabled ? ": WL." : ": WYL.");
       break;
-    case 2:
-      lcd.setCursor(0, 1);
-      lcd.print("Ustaw minute");
-      break;
-    case 3:
+    case 2: // wyświetl gozinę/minutę alarmu
       lcd.setCursor(0, 1);
       lcd.print("Budzik: ");
       if (alarmHour < 10) {
@@ -178,8 +173,8 @@ void displayTime() {
         lcd.print("0");
       }
       lcd.print(alarmMinute);
-      break;
-    case 4:
+      break; 
+    case 3:
       lcd.setCursor(0, 1);
       lcd.print("Skoro swit");
       lcd.print(dawnAlarmEnabled ? ": WL." : ": WYL.");
@@ -200,6 +195,8 @@ void setup() {
   lcd.print("Budzik Arduino");
   delay(2000);
   lcd.clear();
+  Serial.begin(9600);
+  Serial.println("Działam");
 }
 
 void loop() {

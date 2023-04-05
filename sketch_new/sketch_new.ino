@@ -43,6 +43,10 @@ int menuState = 0;
 unsigned long previousMillis = 0;
 const long interval = 1000;
 
+//Piny dalmierza
+const int trigPin = A1; // Pin TRIG podłączony do A1
+const int echoPin = A2; // Pin ECHO podłączony do A2
+
 void updateClock() {
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
@@ -118,15 +122,32 @@ void handleMenu() {
   }
 }
 
+float getDistance(){
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+
+  digitalWrite(trigPin, HIGH); // Wysłanie sygnału z dalmierza
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  unsigned long duration = pulseIn(echoPin, HIGH); // Odczytanie czasu trwania sygnału ECHO
+
+  float distance = duration * 0.0344 / 2;
+  
+  delay(1000);
+
+  return distance;
+}
+
 void checkAlarm() {
   // zielona dioda dla włączonego alarmu
-  if(alarmEnabled) {
+  if(alarmEnabled || dawnAlarmEnabled) {
     digitalWrite(ledGreen, HIGH);        
   } else {
     digitalWrite(ledGreen, LOW);
   }
   // czerwona dioda świeci gdy jest czas alarmu
-  if ((alarmEnabled && hour == alarmHour && minute == alarmMinute) || (dawnAlarmEnabled && analogRead(photoresistor) > 512)) {
+  if ((alarmEnabled && hour == alarmHour && minute == alarmMinute) || (dawnAlarmEnabled && analogRead(photoresistor) > 200)) {
     alarmSounding = true;
     while (alarmSounding) {
       digitalWrite(ledRed, HIGH);
@@ -140,9 +161,19 @@ void checkAlarm() {
         alarmEnabled = false;
         dawnAlarmEnabled = false;
       }
+      if(getDistance() <= 10.0){
+        alarmSounding = false;
+        dawnAlarmEnabled = false;
+        alarmMinute += 5;
+        if (alarmMinute > 59) {
+          alarmHour += 1;
+          alarmMinute = alarmMinute % 60;
+        }
+      }
     }
   }
 }
+
 
 void displayTime() {
   lcd.clear();
@@ -209,14 +240,16 @@ void setup() {
   lcd.clear();
   Serial.begin(9600);
   Serial.println("Działam");
-}
+
+  pinMode(trigPin, OUTPUT); // Ustawienie pinu TRIG jako wyjście
+  pinMode(echoPin, INPUT);  // Ustawienie pinu ECHO jako wejście
+} 
 
 void loop() {
   updateClock();
   displayTime();
   handleMenu();
   checkAlarm();
+  Serial.println(analogRead(photoresistor));
   delay(100);
 }
-
-

@@ -47,6 +47,9 @@ const long interval = 1000;
 const int trigPin = A1; // Pin TRIG podłączony do A1
 const int echoPin = A2; // Pin ECHO podłączony do A2
 
+int servoPin = A3; // Pin analogowy, do którego podłączono serwomechanizm
+int pos = 0;
+
 void updateClock() {
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
@@ -64,6 +67,14 @@ void updateClock() {
       }
     }
   }
+}
+
+void writeServo(int pin, int angle) {
+  int pulseWidth = map(angle, 0, 180, 1000, 2000); // Przetwórz kąt na szerokość impulsu
+  digitalWrite(pin, HIGH);
+  delayMicroseconds(pulseWidth);
+  digitalWrite(pin, LOW);
+  delay(20);
 }
 
 void handleMenu() {
@@ -150,6 +161,16 @@ void checkAlarm() {
   if ((alarmEnabled && hour == alarmHour && minute == alarmMinute) || (dawnAlarmEnabled && analogRead(photoresistor) > 200)) {
     alarmSounding = true;
     while (alarmSounding) {
+    /*for (pos = 0; pos <= 180; pos+=10) {
+      writeServo(servoPin, pos);
+      delay(15); // Odczekaj 15 ms pomiędzy kolejnymi krokami
+    }
+
+  // Przesuń serwomechanizm z powrotem od 180 do 0 stopni
+    for (pos = 180; pos >= 0; pos-=10) {
+      writeServo(servoPin, pos);
+      delay(15);
+    }*/
       digitalWrite(ledRed, HIGH);
       digitalWrite(buzzer, HIGH);
       delay(500);
@@ -161,14 +182,17 @@ void checkAlarm() {
         alarmEnabled = false;
         dawnAlarmEnabled = false;
       }
-      if(getDistance() <= 10.0){
+      if((getDistance() <= 10.0) && (dawnAlarmEnabled == false)){
         alarmSounding = false;
-        dawnAlarmEnabled = false;
         alarmMinute += 5;
         if (alarmMinute > 59) {
           alarmHour += 1;
           alarmMinute = alarmMinute % 60;
         }
+      }
+      if((getDistance() <= 10.0) && (dawnAlarmEnabled == true)){
+        dawnAlarmEnabled = false;
+        alarmSounding = false;
       }
     }
   }
@@ -243,6 +267,7 @@ void setup() {
 
   pinMode(trigPin, OUTPUT); // Ustawienie pinu TRIG jako wyjście
   pinMode(echoPin, INPUT);  // Ustawienie pinu ECHO jako wejście
+  pinMode(servoPin, OUTPUT); // Ustaw pin analogowy jako wyjście
 } 
 
 void loop() {

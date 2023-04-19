@@ -1,7 +1,10 @@
 /* 
 przyciski na płytce
-+   - buttonSelect
-++  - buttonNext, buttonMenu
++   - buttonTop        
+++  - buttonDown, buttonRight
+
+buttonTop - set minutes
+buttonDown - seetHours
 
 
 case0 : ustaw czas(godzine/minute)
@@ -16,9 +19,9 @@ case3 : fotorezystor
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
 // Stałe dla przycisków
-const int buttonMenu = 9;
-const int buttonNext = 10;
-const int buttonSelect = 13;
+const int buttonRight = 9;
+const int buttonDown = 10;
+const int buttonTop = 13;
 
 // Stałe dla diod LED
 const int ledRed = 6;
@@ -50,6 +53,8 @@ const int echoPin = A2; // Pin ECHO podłączony do A2
 int servoPin = A3; // Pin analogowy, do którego podłączono serwomechanizm
 int pos = 0;
 
+const float touchDistance = 40.0;
+
 void updateClock() {
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
@@ -78,7 +83,7 @@ void writeServo(int pin, int angle) {
 }
 
 void handleMenu() {
-  if (digitalRead(buttonMenu) == LOW) {
+  if (digitalRead(buttonRight) == LOW) {
     menuState++;
     if (menuState > 3) {
       menuState = 0;
@@ -86,7 +91,7 @@ void handleMenu() {
     delay(200);
   }
 
-  if (digitalRead(buttonNext) == LOW) {
+  if (digitalRead(buttonDown) == LOW) {
     switch (menuState) {
         case 0: // Ustaw godzinę
         hour++;
@@ -114,7 +119,7 @@ void handleMenu() {
     delay(200);
   }
 
-  if (digitalRead(buttonSelect) == LOW) {
+  if (digitalRead(buttonTop) == LOW) {
     switch (menuState) {
       case 0: // Ustaw minutę
         minute++;
@@ -177,12 +182,12 @@ void checkAlarm() {
       digitalWrite(ledRed, LOW);
       digitalWrite(buzzer, LOW);
       delay(500);
-      if (digitalRead(buttonMenu) == LOW) {
+      if (digitalRead(buttonRight) == LOW) {
         alarmSounding = false;
         alarmEnabled = false;
         dawnAlarmEnabled = false;
       }
-      if((getDistance() <= 10.0) && (dawnAlarmEnabled == false)){
+      if((getDistance() <= touchDistance) && (dawnAlarmEnabled == false)){
         alarmSounding = false;
         alarmMinute += 5;
         if (alarmMinute > 59) {
@@ -250,9 +255,9 @@ void displayTime() {
 }
 
 void setup() {
-  pinMode(buttonMenu, INPUT_PULLUP);
-  pinMode(buttonNext, INPUT_PULLUP);
-  pinMode(buttonSelect, INPUT_PULLUP);
+  pinMode(buttonRight, INPUT_PULLUP);
+  pinMode(buttonDown, INPUT_PULLUP);
+  pinMode(buttonTop, INPUT_PULLUP);
   pinMode(ledRed, OUTPUT);
   pinMode(ledGreen, OUTPUT);
   pinMode(buzzer, OUTPUT);
@@ -271,6 +276,7 @@ void setup() {
 } 
 
 void loop() {
+  Serial.println(analogRead(photoresistor));
   updateClock();
   displayTime();
   handleMenu();
